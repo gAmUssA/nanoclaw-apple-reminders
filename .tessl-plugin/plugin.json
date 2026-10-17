@@ -1,0 +1,7 @@
+{
+  "name": "gamussa/nanoclaw-apple-reminders",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Viktor's Apple Reminders integration through an authenticated Mac EventKit bridge.",
+  "skills": ["skills/apple-reminders"]
+}

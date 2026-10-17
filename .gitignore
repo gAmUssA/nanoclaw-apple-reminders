@@ -1,0 +1,15 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.DS_Store
+*.pyc
+.env
+.env.*
+data/
+logs/
+*.log
+*.app/
+bridge-token*
+credentials*
+runtime/
