@@ -66,7 +66,13 @@ python3 /home/node/.claude/skills/tessl__apple-reminders/scripts/apple_reminders
 
 Due values must be timezone-aware ISO8601 UTC timestamps. Convert the user's
 requested local time before calling; do not invent a time for a date-only request.
-For date-only requests, omit `--due` or ask for a time. EventKit does not schedule
+For date-only requests, omit `--due` or ask for a time. Supplying `--due` creates
+an absolute Apple Reminders alarm at the saved due time (second precision).
+Changing it replaces only the absolute non-location alarm at the old due time;
+other user alarms remain. Omit `--due` to preserve all existing alarms. Returned
+`alarm` is the matching due-time alarm in UTC, or null. Re-read it to verify the
+stored alarm; a local save does not prove a Mac or iPhone popup occurred.
+EventKit does not schedule
 the NanoClaw Telegram reminder; the scheduler remains responsible for that.
 
 Re-read with `list-todos --include-completed` after a write and match the UID.

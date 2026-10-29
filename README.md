@@ -109,7 +109,14 @@ The marker is stored in the reminder's URL field. Editing that URL manually
 removes the marker. Omitting `--uid` generates a new one; the response returns
 it. Updates preserve completed status and omitted notes/due values. Completion
 also accepts the native ID returned for an unmanaged existing reminder.
-No delete or list-creation endpoint is exposed.
+A supplied due date also creates one absolute alarm at the saved due instant.
+Retries do not duplicate it. Changing the due replaces the absolute alarm at
+its previous due time, preserving other absolute, relative and location alarms.
+Omitting `--due` leaves due dates and alarms unchanged. Due dates retain the
+existing second precision. Records include `alarm`: the ISO8601 UTC absolute
+alarm matching the due time, or null when absent. This is stored-alarm evidence,
+not proof of a displayed notification; device notification settings and sync
+still apply. No delete or list-creation endpoint is exposed.
 
 ## Optional schedule-task mirror
 
