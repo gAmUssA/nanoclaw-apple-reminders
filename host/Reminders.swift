@@ -91,6 +91,33 @@ struct RemindersCLI {
         }
     }
 
+    // The absolute, non-location alarm at the prior due time is bridge-owned.
+    // All alarms at other times, relative alarms and location alarms survive.
+    static func applyDue(_ due: Date?, to item: EKReminder) {
+        guard let due else { return }
+        let previousDue = item.dueDateComponents?.date
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        let components = utc.dateComponents([.calendar, .timeZone, .year, .month, .day, .hour, .minute, .second], from: due)
+        // Match the due date's existing second precision so fractional input
+        // cannot leave an unmatchable old alarm on the next update.
+        let alarmDate = components.date!
+        if let previousDue {
+            for alarm in item.alarms ?? [] where alarm.absoluteDate == previousDue && alarm.structuredLocation == nil {
+                item.removeAlarm(alarm)
+            }
+        }
+        item.dueDateComponents = components
+        if !(item.alarms ?? []).contains(where: { $0.absoluteDate == alarmDate && $0.structuredLocation == nil }) {
+            item.addAlarm(EKAlarm(absoluteDate: alarmDate))
+        }
+    }
+
+    static func dueAlarm(_ item: EKReminder) -> Date? {
+        guard let due = item.dueDateComponents?.date else { return nil }
+        return item.alarms?.first(where: { $0.absoluteDate == due && $0.structuredLocation == nil })?.absoluteDate
+    }
+
     static func record(_ item: EKReminder) -> [String: Any] {
         let formatter = ISO8601DateFormatter()
         return ["id": item.calendarItemIdentifier,
@@ -100,7 +127,8 @@ struct RemindersCLI {
                 "title": item.title ?? "", "notes": item.notes as Any? ?? NSNull(),
                 "completed": item.isCompleted,
                 "completed_at": item.completionDate.map(formatter.string) as Any? ?? NSNull(),
-                "due": item.dueDateComponents?.date.map(formatter.string) as Any? ?? NSNull()]
+                "due": item.dueDateComponents?.date.map(formatter.string) as Any? ?? NSNull(),
+                "alarm": dueAlarm(item).map(formatter.string) as Any? ?? NSNull()]
     }
 
     @MainActor
@@ -177,11 +205,7 @@ struct RemindersCLI {
         item.title = title
         if let notes = request.notes { item.notes = notes }
         item.url = target
-        if let due {
-            var utc = Calendar(identifier: .gregorian)
-            utc.timeZone = TimeZone(secondsFromGMT: 0)!
-            item.dueDateComponents = utc.dateComponents([.calendar, .timeZone, .year, .month, .day, .hour, .minute, .second], from: due)
-        }
+        applyDue(due, to: item)
         try store.save(item, commit: true)
         var result = record(item)
         result["created"] = matches.isEmpty

@@ -178,3 +178,14 @@ def test_gateway_route_overrides_only_this_hosts_no_proxy(monkeypatch):
     assert seen[0].get_header("Proxy-authorization").startswith("Basic ")
     import os
     assert os.environ["NO_PROXY"] == "host.docker.internal,localhost"
+
+
+def test_due_alarm_is_preserved_in_python_client_json(server, monkeypatch, capsys):
+    due = "2024-10-17T09:00:00Z"
+    monkeypatch.setattr(bridge, "native", lambda *args: {
+        "ok": True, "command": "add-todo", "data": {"uid": "alarm-test", "due": due, "alarm": due}
+    })
+    assert client.main(["add-todo", "--list", "list1", "--title", "Test", "--uid", "alarm-test", "--due", due]) == 0
+    result = capsys.readouterr()
+    assert result.err == ""
+    assert json.loads(result.out)["data"]["alarm"] == due
